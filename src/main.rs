@@ -59,7 +59,6 @@ impl Spectra {
             .split(|path| path.as_ref().unwrap().path().is_dir());
         let newly_created_folders = dirs
             .into_iter()
-            // .filter(|x| x.as_ref().unwrap().path().is_dir())
             .filter(|dir| {
                 dir.as_ref()
                     .unwrap()
@@ -78,7 +77,6 @@ impl Spectra {
         let spectrum_vector = spectral_files
             .into_iter()
             .map(|x| handle_one_file(&x).unwrap())
-            //  .filter(|x| x.is_ok()).
             .collect::<Vec<_>>();
         Ok(Spectra {
             data: spectrum_vector,
