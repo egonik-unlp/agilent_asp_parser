@@ -57,6 +57,13 @@ impl Spectra {
         let (files, dirs) = walker
             .into_iter()
             .split(|path| path.as_ref().unwrap().path().is_dir());
+
+        let spectral_files = files
+            .into_iter()
+            .map(|x| x.unwrap().path().display().to_string())
+            .filter(|x| extension_is_asp(x))
+            .collect::<Vec<_>>();
+
         let newly_created_folders = dirs
             .into_iter()
             .filter(|dir| {
@@ -66,14 +73,17 @@ impl Spectra {
                     .into_iter()
                     .any(|path_name| !path_name.eq("exportados"))
             })
+            .filter(|entry| {
+                spectral_files
+                    .clone()
+                    .iter()
+                    .map(|st| Path::new(st).parent().unwrap())
+                    .any(|fp| fp.eq(entry.as_ref().unwrap().path()))
+            })
             .map(|node| node.unwrap())
             .collect::<Vec<_>>();
         handle_folders(newly_created_folders);
-        let spectral_files = files
-            .into_iter()
-            .map(|x| x.unwrap().path().display().to_string())
-            .filter(|x| extension_is_asp(x))
-            .collect::<Vec<_>>();
+
         let spectrum_vector = spectral_files
             .into_iter()
             .map(|x| handle_one_file(&x).unwrap())
