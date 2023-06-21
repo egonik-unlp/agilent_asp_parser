@@ -123,7 +123,8 @@ fn handle_one_file(filename: &str) -> Result<Spectrum, Box<dyn Error>> {
         .into_iter()
         .filter_map(|x| x.parse::<f64>().ok())
         .collect_tuple()
-        .unwrap();
+        .ok_or("Archivo mal formateado")?;
+    // .unwrap();
     let contents = contents.into_iter().skip(3);
 
     let wng = linspace::<f64>(hwn, lwn, ln as usize).collect();
