@@ -1,4 +1,3 @@
-
 #![feature(iter_next_chunk)]
 
 
@@ -7,18 +6,17 @@ use std::path::Path;
 use std::error::Error;
 use itertools_num::linspace;
 use itertools::Itertools;
-use walkdir::WalkDir;
-use csv::Writer;
-use serde::Serialize;
+use walkdir::{WalkDir, DirEntry};
 use polars::prelude::*;
+use split_iter::Splittable;
 
 
-const NON_DATA_LINES : i32 = 6;
 
-#[derive(Debug, Serialize)]
+
+
+#[derive(Debug)]
 struct Spectrum {
-    #[serde(skip_serializing)]
-    filename : String, 
+    filename : String,
     wavenumber_grid: Vec<f64>,
     transmittance_grid: Vec<f64>
 }
@@ -57,8 +55,18 @@ fn extension_is_asp(filename : &String) -> bool {
 
 impl Spectra {
     fn build_from_path( path : &str) -> Result<Spectra, Box<dyn Error>>{
-        let walker = WalkDir::new(path).max_depth(1);
-        let spectral_files = walker.into_iter()
+        let walker = WalkDir::new(path);
+        let (files, dirs) = walker.into_iter().split( |path| path.as_ref().unwrap().path().is_dir());
+        let newly_created_folders = dirs.into_iter()
+                                    // .filter(|x| x.as_ref().unwrap().path().is_dir())
+                                    .filter(|dir| {
+                                        dir.as_ref().unwrap().path().into_iter().any(|path_name| !path_name.eq("exportados"))
+                                    } 
+                                )
+                                .map(|node| node.unwrap())
+                                .collect::<Vec<_>>();
+        handle_folders(newly_created_folders);
+        let spectral_files = files.into_iter()
                                        .map(|x| x.unwrap().path().display().to_string())
                                        .filter(|x| extension_is_asp(x))
                                        .collect::<Vec<_>>();
@@ -77,13 +85,18 @@ impl Spectra {
     }
 }
 
-fn handle_folders() {
-    fs::create_dir_all("./exportados");
+fn handle_folders(paths : Vec<DirEntry>) {
+    let basepath = Path::new("exportados");
+    for foldpath in paths.into_iter() {
+            let pth = basepath.join(foldpath.path());
+            if pth.ne(basepath){
+                fs::create_dir_all(pth).unwrap();
+            }
+    }
 }
 
 
 fn main() {
-    handle_folders();
     let spectra = Spectra::build_from_path(".").unwrap();
     spectra.export_all();
 }
