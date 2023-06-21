@@ -46,7 +46,7 @@ struct Spectra {
 fn extension_is_asp(filename: &String) -> bool {
     let path = Path::new(filename).extension();
     match path {
-        Some(i) => i.to_str().unwrap_or("basura").eq("asp"),
+        Some(i) => i.to_str().unwrap_or("basura").to_lowercase().eq("asp"),
         None => false,
     }
 }
@@ -114,9 +114,6 @@ fn main() {
 fn handle_one_file(filename: &str) -> Result<Spectrum, Box<dyn Error>> {
     let contents = fs::read_to_string(filename)?;
     let mut contents = contents.lines();
-    //  .into_iter()
-    //  .map(|x| x.parse::<f64>())
-    //  .collect()?;
     let (ln, hwn, lwn): (f64, f64, f64) = contents
         .next_chunk::<3>()
         .unwrap()
@@ -124,7 +121,6 @@ fn handle_one_file(filename: &str) -> Result<Spectrum, Box<dyn Error>> {
         .filter_map(|x| x.parse::<f64>().ok())
         .collect_tuple()
         .ok_or("Archivo mal formateado")?;
-    // .unwrap();
     let contents = contents.into_iter().skip(3);
 
     let wng = linspace::<f64>(hwn, lwn, ln as usize).collect();
